@@ -18,22 +18,9 @@ Transformar o experimento existente em um MVP completo que:
 
 ## Hipotese
 
-Ajustar o threshold de decisao pode melhorar o equilibrio entre `Recall` e `Precision` em relacao ao threshold padrao de `0.5`.
+Ajustar o threshold de decisao pode melhorar o equilibrio entre `Recall` e `Precision` em relacao ao threshold padrao.
 
-## Estado atual do repositório
 
-O repositório original continha apenas o notebook [Final.ipynb](</c:/Users/caiok/OneDrive/Documents/Python/MVP - Fraude/Final.ipynb>), preservado como material exploratorio. Em 29/08/2026, os datasets referenciados nele nao estao presentes no workspace, portanto nenhum resultado novo sobre os dados reais foi inventado.
-
-## Arquitetura
-
-- `app/`: FastAPI, schemas e servicos de aplicacao.
-- `ml/`: carga de dados, preprocessamento, modelos, avaliacao, threshold e inferencia.
-- `scripts/`: treino, avaliacao, threshold analysis e predicao local.
-- `streamlit_app.py`: interface demonstrativa.
-- `docs/`: arquitetura, pesquisa, ADRs e diagramas Mermaid.
-- `results/`: saidas experimentais reproduziveis.
-
-Detalhes em [architecture.md](docs/architecture/architecture.md) e [data_modeling.md](docs/architecture/data_modeling.md).
 
 ## Tecnologias
 
@@ -48,21 +35,6 @@ Detalhes em [architecture.md](docs/architecture/architecture.md) e [data_modelin
 - matplotlib
 - seaborn
 - pytest
-
-## Estrutura do projeto
-
-```text
-app/
-ml/
-data/
-docs/
-models/
-results/
-scripts/
-tests/
-streamlit_app.py
-Final.ipynb
-```
 
 ## Como instalar
 
@@ -156,21 +128,6 @@ Resposta:
 
 Os nomes reais das features sao derivados do dataset treinado e validados pelo artefato. O JSON acima e apenas ilustrativo de formato.
 
-## Diagramas
-
-Os diagramas Mermaid criados estao em `docs/diagrams/`:
-
-- contexto
-- caso de uso
-- componentes
-- sequencia
-- classes
-- atividades
-- estados
-- implantacao
-- pipeline de ML
-- experimento cientifico
-
 ## Resultados
 
 - Resultados historicos do experimento original permanecem no notebook `Final.ipynb`.
@@ -178,11 +135,6 @@ Os diagramas Mermaid criados estao em `docs/diagrams/`:
 - Os artefatos atualmente presentes em `models/` e `results/` foram gerados em 29/08/2026 com um dataset sintetico de smoke test para validar o software, nao para sustentar conclusoes cientificas.
 - Nao foram adicionados numeros experimentais inventados a este repositório.
 
-## Limitacoes
-
-- Datasets reais ausentes no workspace em 29/08/2026.
-- O dashboard depende de um artefato previamente treinado.
-- A explicabilidade com SHAP pode variar conforme o modelo serializado e a disponibilidade do pacote.
 
 ## Trabalhos futuros
 
@@ -193,18 +145,3 @@ Os diagramas Mermaid criados estao em `docs/diagrams/`:
 - pipelines CI/CD;
 - deployment em cloud;
 - retreinamento automatizado.
-
-## Relacao com TCC / artigo
-
-O projeto foi estruturado para separar claramente:
-
-- experimentacao exploratoria em notebook;
-- experimentos reproduziveis por script;
-- artefato operacional para inferencia;
-- documentacao metodologica e arquitetural.
-
-Documentos principais:
-
-- [research_question.md](docs/research/research_question.md)
-- [experimental_protocol.md](docs/research/experimental_protocol.md)
-- [architecture.md](docs/architecture/architecture.md)
