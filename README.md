@@ -20,8 +20,6 @@ Transformar o experimento existente em um MVP completo que:
 
 Ajustar o threshold de decisao pode melhorar o equilibrio entre `Recall` e `Precision` em relacao ao threshold padrao.
 
-
-
 ## Tecnologias
 
 - Python 3.11
@@ -43,8 +41,6 @@ python -m venv .venv
 .venv\Scripts\activate
 pip install -r requirements.txt
 ```
-
-Copie `.env.example` para `.env` e ajuste se necessario.
 
 ## Como executar treinamento
 
@@ -134,14 +130,3 @@ Os nomes reais das features sao derivados do dataset treinado e validados pelo a
 - Resultados novos e reproduziveis devem ser gerados pelos scripts quando os datasets reais forem recolocados no workspace.
 - Os artefatos atualmente presentes em `models/` e `results/` foram gerados em 29/08/2026 com um dataset sintetico de smoke test para validar o software, nao para sustentar conclusoes cientificas.
 - Nao foram adicionados numeros experimentais inventados a este repositório.
-
-
-## Trabalhos futuros
-
-- autenticacao e autorizacao;
-- model registry;
-- auditoria de predicoes;
-- monitoramento de data drift e model drift;
-- pipelines CI/CD;
-- deployment em cloud;
-- retreinamento automatizado.
