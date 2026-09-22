@@ -5,3 +5,4 @@ pytest-cache-files-*/
 .venv/
 .env
 /docs/diagrams/
+Final.ipynb
