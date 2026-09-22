@@ -1,0 +1,32 @@
+@startuml 01_caso_de_uso
+left to right direction
+skinparam packageStyle rectangle
+actor "Analista / Usuário" as A
+rectangle "Sistema de Detecção de Fraude" {
+  usecase "UC01\nSubmeter transação" as UC01
+  usecase "UC02\nConsultar resultado da predição" as UC02
+  usecase "UC03\nConsultar thresholds avaliados" as UC03
+  usecase "UC04\nReavaliar thresholds sobre o holdout" as UC04
+  usecase "UC05\nConsultar métricas do modelo" as UC05
+  usecase "UC06\nConsultar informações do modelo" as UC06
+  usecase "UC07\nConsultar status do sistema" as UC07
+  usecase "Validar dados da transação" as V
+  usecase "Gerar probabilidade de fraude" as P
+  usecase "Aplicar threshold operacional do artefato" as T
+  usecase "Classificar nível de risco" as R
+  usecase "Gerar decisão" as D
+}
+A --> UC01
+A --> UC02
+A --> UC03
+A --> UC04
+A --> UC05
+A --> UC06
+A --> UC07
+UC01 .> V : <<include>>
+UC01 .> P : <<include>>
+UC01 .> T : <<include>>
+UC01 .> R : <<include>>
+UC01 .> D : <<include>>
+UC03 .> UC04 : <<include>>
+@enduml
