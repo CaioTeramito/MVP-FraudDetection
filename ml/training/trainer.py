@@ -12,7 +12,7 @@ from sklearn.base import clone
 from sklearn.model_selection import StratifiedKFold, cross_val_score, train_test_split
 
 from app.core.config import settings
-from ml.data.dataset import DatasetBundle, load_dataset
+from ml.data.dataset import load_dataset
 from ml.evaluation.metrics import calculate_classification_metrics
 from ml.inference.artifact import ModelArtifact, save_artifact
 from ml.models.strategies import build_model_strategies
@@ -109,7 +109,24 @@ def train_and_serialize(
         stratify=y_train_full,
     )
 
-    preprocessor, _ = build_preprocessing_pipeline(X_train)
+    preprocessor, preprocessing_artifacts = build_preprocessing_pipeline(
+        X_train,
+        max_categorical_cardinality=settings.max_categorical_cardinality,
+    )
+    retained_features = (
+        preprocessing_artifacts.numeric_features
+        + preprocessing_artifacts.categorical_features
+    )
+    if not retained_features:
+        raise ValueError(
+            "Nenhuma feature elegivel restou apos filtrar categorias de alta cardinalidade. "
+            "Ajuste MAX_CATEGORICAL_CARDINALITY ou revise o dataset."
+        )
+
+    X_train_full = X_train_full[retained_features]
+    X_test = X_test[retained_features]
+    X_train = X_train[retained_features]
+    X_val = X_val[retained_features]
     strategies = build_model_strategies(settings.random_state)
     cv = StratifiedKFold(
         n_splits=settings.cv_folds,
@@ -216,7 +233,7 @@ def train_and_serialize(
         dataset_name=dataset.dataset_name,
         dataset_path=str(dataset.path),
         target_column=dataset.target_column,
-        feature_columns=dataset.feature_columns,
+        feature_columns=retained_features,
         transformed_feature_names=transformed_feature_names,
         threshold=selected_threshold,
         threshold_low=settings.threshold_low,
@@ -230,6 +247,8 @@ def train_and_serialize(
             "test_size": settings.test_size,
             "validation_size": settings.validation_size,
             "cv_folds": settings.cv_folds,
+            "max_categorical_cardinality": settings.max_categorical_cardinality,
+            "dropped_high_cardinality_features": preprocessing_artifacts.dropped_high_cardinality_features,
             "random_state": settings.random_state,
             "threshold_step": threshold_step or settings.threshold_step,
             "minimum_precision": minimum_precision or settings.minimum_precision,
@@ -246,6 +265,8 @@ def train_and_serialize(
             f"'model_selection_metric={model_selection_metric}' sobre treino/validacao.",
             f"O threshold operacional foi escolhido pela estrategia '{threshold_selection_strategy}' sobre o conjunto de validacao.",
             "O conjunto de teste final foi preservado para avaliacao final e nao participa da selecao.",
+            "Features categoricas de alta cardinalidade foram removidas antes do One-Hot Encoding: "
+            f"{preprocessing_artifacts.dropped_high_cardinality_features or 'nenhuma'}.",
             "A comparacao completa entre candidatos permanece salva em results/metrics/model_comparison.csv.",
         ],
     )

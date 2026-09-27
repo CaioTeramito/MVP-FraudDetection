@@ -21,13 +21,16 @@ class Settings:
     )
     default_dataset_path: Path = BASE_DIR / os.getenv(
         "DEFAULT_DATASET_PATH",
-        "data/raw/creditcard.csv",
+        "data/raw/PS_20174392719_1491204439457_log.csv",
     )
     results_dir: Path = BASE_DIR / os.getenv("RESULTS_DIR", "results")
     random_state: int = int(os.getenv("RANDOM_STATE", "42"))
     test_size: float = float(os.getenv("TEST_SIZE", "0.2"))
     validation_size: float = float(os.getenv("VALIDATION_SIZE", "0.25"))
     cv_folds: int = int(os.getenv("CV_FOLDS", "5"))
+    max_categorical_cardinality: int = int(
+        os.getenv("MAX_CATEGORICAL_CARDINALITY", "1000")
+    )
     threshold_step: float = float(os.getenv("THRESHOLD_STEP", "0.05"))
     minimum_precision: float = float(os.getenv("MINIMUM_PRECISION", "0.50"))
     minimum_recall: float = float(os.getenv("MINIMUM_RECALL", "0.70"))

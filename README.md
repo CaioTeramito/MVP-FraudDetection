@@ -63,7 +63,7 @@ python scripts/threshold_analysis.py --artifact models/fraud_model_artifact.jobl
 ## Como executar API
 
 ```bash
-uvicorn app.main:app --reload
+python -m uvicorn app.main:app --reload
 ```
 
 Documentacao OpenAPI: `http://localhost:8000/api/v1/docs`
@@ -71,7 +71,7 @@ Documentacao OpenAPI: `http://localhost:8000/api/v1/docs`
 ## Como executar frontend
 
 ```bash
-streamlit run streamlit_app.py
+python -m streamlit run streamlit_app.py
 ```
 
 ## Como executar testes
