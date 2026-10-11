@@ -9,3 +9,9 @@ def test_predictor_returns_business_decision(sample_artifact):
     assert 0.0 <= result["fraud_probability"] <= 1.0
     assert result["decision"] in {"APPROVE", "REVIEW", "BLOCK"}
     assert result["risk"] in {"LOW", "MEDIUM", "HIGH"}
+
+
+def test_artifact_preserves_threshold_strategy_metadata(sample_artifact):
+    predictor = FraudPredictor.from_path(str(sample_artifact))
+    assert predictor.artifact.threshold_strategy == "max_f2"
+    assert predictor.artifact.threshold_strategy_parameters == {"source": "pytest"}

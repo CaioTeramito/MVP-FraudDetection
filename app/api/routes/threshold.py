@@ -32,6 +32,9 @@ def threshold_evaluate(
     except ArtifactNotFoundError as exc:
         raise HTTPException(status_code=503, detail=str(exc)) from exc
 
+    # This endpoint is exploratory only. The artifact's test arrays are used
+    # to report evaluation metrics and never update the persisted threshold.
+    # Threshold selection for training happens exclusively on validation data.
     service = ThresholdService(artifact)
     threshold_artifacts = service.reevaluate(
         probabilities=artifact.holdout_probabilities,
@@ -53,6 +56,7 @@ def threshold_evaluate(
     return ThresholdEvaluationResponse(
         selected_threshold=selected_threshold,
         criterion=request.criterion,
+        evaluation_scope="test_only_exploratory",
         rows=[
             ThresholdTableRow(**row)
             for row in threshold_artifacts.table.to_dict(orient="records")

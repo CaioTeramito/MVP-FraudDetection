@@ -19,6 +19,14 @@ def test_train_and_serialize_runs_on_small_dataset(monkeypatch, synthetic_datase
             )
         ],
     )
+    captured = {}
+    original_evaluate_thresholds = trainer.evaluate_thresholds
+
+    def capture_threshold_input(*args, **kwargs):
+        captured["y_true"] = kwargs["y_true"].copy()
+        return original_evaluate_thresholds(*args, **kwargs)
+
+    monkeypatch.setattr(trainer, "evaluate_thresholds", capture_threshold_input)
 
     artifact_path = tmp_path / "trained.joblib"
     output = trainer.train_and_serialize(
@@ -29,3 +37,5 @@ def test_train_and_serialize_runs_on_small_dataset(monkeypatch, synthetic_datase
     assert artifact_path.exists()
     assert output.artifact.model_name == "logistic_regression"
     assert not output.comparison_table.empty
+    assert "y_true" in captured
+    assert captured["y_true"].tolist() != output.artifact.holdout_truth

@@ -32,7 +32,7 @@ package "Camada de dominio ML" as MlDomain {
 }
 
 package "Camada de dados e infraestrutura" as Infrastructure {
-  database "Dataset" as Dataset
+  file "PaySim CSV dataset" as Dataset
   artifact "fraud_model_artifact.joblib" as Artifact
   folder "Resultados" as Results
   component "Configuracao e logging" as Config

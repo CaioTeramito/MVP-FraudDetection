@@ -40,7 +40,15 @@ def main() -> None:
             "max_f2",
             "max_recall_with_min_precision",
             "max_precision_with_min_recall",
+            "cost",
         ],
+    )
+    parser.add_argument("--cost-fn", type=float, default=None)
+    parser.add_argument("--cost-fp", type=float, default=None)
+    parser.add_argument(
+        "--amount-weighted",
+        action="store_true",
+        help="Weight false-negative cost by the transaction amount feature.",
     )
     args = parser.parse_args()
 
@@ -50,6 +58,9 @@ def main() -> None:
         artifact_path=args.artifact_path,
         model_selection_metric=args.model_selection_metric,
         threshold_selection_strategy=args.threshold_selection_strategy,
+        cost_fn=args.cost_fn,
+        cost_fp=args.cost_fp,
+        amount_weighted=args.amount_weighted,
     )
     print("Treinamento concluido.")
     print(output.comparison_table.to_string(index=False))

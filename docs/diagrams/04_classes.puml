@@ -24,6 +24,8 @@ class ModelArtifact {
   threshold
   threshold_low
   threshold_high
+  threshold_strategy
+  threshold_strategy_parameters
   metrics
   threshold_table
   best_thresholds
@@ -50,6 +52,19 @@ class DecisionResult {
   risk
   decision
 }
+abstract class ThresholdStrategy {
+  +select(table): row
+}
+class MaxF1Strategy
+class MaxF2Strategy
+class MaxRecallWithMinPrecisionStrategy
+class MaxPrecisionWithMinRecallStrategy
+class CostThresholdStrategy {
+  cost_fn
+  cost_fp
+  amount_weighted
+  +add_cost_columns(table, y_true, probabilities, amount): DataFrame
+}
 
 PredictionService --> FraudPredictor : utiliza
 PredictionService ..> PredictRequest : recebe
@@ -60,4 +75,9 @@ FraudPredictor --> ModelArtifact : usa metadata e thresholds
 DecisionService --> DecisionResult : retorna
 ModelService --> ModelArtifact : carrega
 ThresholdService --> ModelArtifact : reavalia holdout
+ThresholdStrategy <|-- MaxF1Strategy
+ThresholdStrategy <|-- MaxF2Strategy
+ThresholdStrategy <|-- MaxRecallWithMinPrecisionStrategy
+ThresholdStrategy <|-- MaxPrecisionWithMinRecallStrategy
+ThresholdStrategy <|-- CostThresholdStrategy
 @enduml

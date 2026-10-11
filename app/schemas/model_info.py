@@ -11,6 +11,7 @@ class ThresholdSummary(BaseModel):
     recall: float | None = None
     f1: float | None = None
     f2: float | None = None
+    expected_cost: float | None = None
 
 
 class ModelInfoResponse(BaseModel):
@@ -26,3 +27,5 @@ class ModelInfoResponse(BaseModel):
     metrics: dict[str, float]
     training_config: dict[str, Any] = Field(default_factory=dict)
     best_thresholds: dict[str, ThresholdSummary] = Field(default_factory=dict)
+    threshold_strategy: str = "max_f2"
+    threshold_strategy_parameters: dict[str, Any] = Field(default_factory=dict)

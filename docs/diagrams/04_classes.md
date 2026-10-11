@@ -26,6 +26,8 @@ classDiagram
       threshold
       threshold_low
       threshold_high
+      threshold_strategy
+      threshold_strategy_parameters
       metrics
       threshold_table
       best_thresholds
@@ -52,6 +54,20 @@ classDiagram
       risk
       decision
     }
+    class ThresholdStrategy {
+      <<abstract>>
+      +select(table) row
+    }
+    class MaxF1Strategy
+    class MaxF2Strategy
+    class MaxRecallWithMinPrecisionStrategy
+    class MaxPrecisionWithMinRecallStrategy
+    class CostThresholdStrategy {
+      cost_fn
+      cost_fp
+      amount_weighted
+      +add_cost_columns(table, y_true, probabilities, amount) DataFrame
+    }
 
     PredictionService --> FraudPredictor
     PredictionService ..> PredictRequest
@@ -62,4 +78,9 @@ classDiagram
     DecisionService --> DecisionResult
     ModelService --> ModelArtifact
     ThresholdService --> ModelArtifact
+    ThresholdStrategy <|-- MaxF1Strategy
+    ThresholdStrategy <|-- MaxF2Strategy
+    ThresholdStrategy <|-- MaxRecallWithMinPrecisionStrategy
+    ThresholdStrategy <|-- MaxPrecisionWithMinRecallStrategy
+    ThresholdStrategy <|-- CostThresholdStrategy
 ```

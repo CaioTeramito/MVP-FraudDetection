@@ -6,3 +6,11 @@ def test_decision_service_applies_three_level_risk():
     assert service.decide(0.10).decision == "APPROVE"
     assert service.decide(0.50).decision == "REVIEW"
     assert service.decide(0.90).decision == "BLOCK"
+
+
+def test_decision_service_boundaries_are_explicit():
+    service = DecisionService(threshold_low=0.3, threshold_high=0.7)
+    assert service.decide(0.0).decision == "APPROVE"
+    assert service.decide(0.3).decision == "REVIEW"
+    assert service.decide(0.7).decision == "BLOCK"
+    assert service.decide(1.0).decision == "BLOCK"

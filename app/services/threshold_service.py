@@ -23,10 +23,19 @@ class ThresholdService:
         minimum_precision: float | None = None,
         minimum_recall: float | None = None,
     ):
+        effective_step = settings.threshold_step if step is None else step
+        effective_minimum_precision = (
+            settings.minimum_precision
+            if minimum_precision is None
+            else minimum_precision
+        )
+        effective_minimum_recall = (
+            settings.minimum_recall if minimum_recall is None else minimum_recall
+        )
         return evaluate_thresholds(
             y_true=pd.Series(y_true).to_numpy(),
             probabilities=pd.Series(probabilities).to_numpy(),
-            step=step or settings.threshold_step,
-            minimum_precision=minimum_precision or settings.minimum_precision,
-            minimum_recall=minimum_recall or settings.minimum_recall,
+            step=effective_step,
+            minimum_precision=effective_minimum_precision,
+            minimum_recall=effective_minimum_recall,
         )

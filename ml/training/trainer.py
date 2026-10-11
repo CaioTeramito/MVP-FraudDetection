@@ -18,6 +18,7 @@ from ml.inference.artifact import ModelArtifact, save_artifact
 from ml.models.strategies import build_model_strategies
 from ml.preprocessing.pipeline import build_preprocessing_pipeline, get_transformed_feature_names
 from ml.threshold.analysis import ThresholdArtifacts, evaluate_thresholds
+from ml.threshold.strategies import build_threshold_strategy, strategy_parameters
 
 
 @dataclass(slots=True)
@@ -89,6 +90,9 @@ def train_and_serialize(
     threshold_step: float | None = None,
     model_selection_metric: str = "cv_pr_auc_mean",
     threshold_selection_strategy: str = "max_f2",
+    cost_fn: float | None = None,
+    cost_fp: float | None = None,
+    amount_weighted: bool = False,
 ) -> TrainingOutput:
     dataset = load_dataset(dataset_path, dataset_name=dataset_name)
     feature_frame = dataset.frame[dataset.feature_columns]
@@ -193,12 +197,35 @@ def train_and_serialize(
             selected_run = run
             break
 
+    effective_threshold_step = settings.threshold_step if threshold_step is None else threshold_step
+    effective_minimum_precision = (
+        settings.minimum_precision if minimum_precision is None else minimum_precision
+    )
+    effective_minimum_recall = (
+        settings.minimum_recall if minimum_recall is None else minimum_recall
+    )
+    selected_threshold_strategy = build_threshold_strategy(
+        threshold_selection_strategy,
+        minimum_precision=effective_minimum_precision,
+        minimum_recall=effective_minimum_recall,
+        cost_fn=cost_fn,
+        cost_fp=cost_fp,
+        amount_weighted=amount_weighted,
+    )
+    validation_amount = None
+    if amount_weighted:
+        if "amount" not in X_val.columns:
+            raise ValueError("amount_weighted requires an 'amount' feature in validation data")
+        validation_amount = X_val["amount"].to_numpy()
+
     threshold_artifacts = evaluate_thresholds(
         y_true=y_val.to_numpy(),
         probabilities=selected_run["validation_probabilities"],
-        step=threshold_step or settings.threshold_step,
-        minimum_precision=minimum_precision or settings.minimum_precision,
-        minimum_recall=minimum_recall or settings.minimum_recall,
+        step=effective_threshold_step,
+        minimum_precision=effective_minimum_precision,
+        minimum_recall=effective_minimum_recall,
+        strategy=selected_threshold_strategy,
+        amount=validation_amount,
     )
 
     if threshold_selection_strategy not in threshold_artifacts.best_thresholds:
@@ -250,16 +277,19 @@ def train_and_serialize(
             "max_categorical_cardinality": settings.max_categorical_cardinality,
             "dropped_high_cardinality_features": preprocessing_artifacts.dropped_high_cardinality_features,
             "random_state": settings.random_state,
-            "threshold_step": threshold_step or settings.threshold_step,
-            "minimum_precision": minimum_precision or settings.minimum_precision,
-            "minimum_recall": minimum_recall or settings.minimum_recall,
+            "threshold_step": effective_threshold_step,
+            "minimum_precision": effective_minimum_precision,
+            "minimum_recall": effective_minimum_recall,
             "model_candidates": [strategy.name for strategy in strategies],
             "model_selection_metric": model_selection_metric,
             "threshold_selection_strategy": threshold_selection_strategy,
+            "threshold_strategy_parameters": strategy_parameters(selected_threshold_strategy),
         },
         preprocessor=fitted_preprocessor,
         estimator=estimator,
         shap_available=settings.enable_shap,
+        threshold_strategy=selected_threshold_strategy.name,
+        threshold_strategy_parameters=strategy_parameters(selected_threshold_strategy),
         notes=[
             "O modelo serializado do MVP e escolhido pela metrica configurada em "
             f"'model_selection_metric={model_selection_metric}' sobre treino/validacao.",

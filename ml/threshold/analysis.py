@@ -7,6 +7,14 @@ import pandas as pd
 from sklearn.metrics import precision_recall_curve, roc_curve
 
 from ml.evaluation.metrics import calculate_classification_metrics
+from ml.threshold.strategies import (
+    CostThresholdStrategy,
+    MaxF1Strategy,
+    MaxF2Strategy,
+    MaxPrecisionWithMinRecallStrategy,
+    MaxRecallWithMinPrecisionStrategy,
+    ThresholdStrategy,
+)
 
 
 @dataclass(slots=True)
@@ -27,6 +35,8 @@ def evaluate_thresholds(
     step: float,
     minimum_precision: float,
     minimum_recall: float,
+    strategy: ThresholdStrategy | None = None,
+    amount: np.ndarray | None = None,
 ) -> ThresholdArtifacts:
     rows: list[dict[str, float]] = []
     for threshold in generate_thresholds(step):
@@ -36,24 +46,15 @@ def evaluate_thresholds(
 
     table = pd.DataFrame(rows)
 
-    best_f1 = table.loc[table["f1"].idxmax()]
-    best_f2 = table.loc[table["f2"].idxmax()]
-
-    recall_candidates = table[table["precision"] >= minimum_precision]
-    best_recall_constrained = (
-        recall_candidates.sort_values(["recall", "threshold"], ascending=[False, True]).head(1)
-        if not recall_candidates.empty
-        else pd.DataFrame()
-    )
-
-    precision_candidates = table[table["recall"] >= minimum_recall]
-    best_precision_constrained = (
-        precision_candidates.sort_values(
-            ["precision", "threshold"], ascending=[False, False]
-        ).head(1)
-        if not precision_candidates.empty
-        else pd.DataFrame()
-    )
+    strategies: list[ThresholdStrategy] = [
+        MaxF1Strategy(),
+        MaxF2Strategy(),
+        MaxRecallWithMinPrecisionStrategy(minimum_precision),
+        MaxPrecisionWithMinRecallStrategy(minimum_recall),
+    ]
+    if isinstance(strategy, CostThresholdStrategy):
+        table = strategy.add_cost_columns(table, y_true, probabilities, amount)
+        strategies.append(strategy)
 
     precision_values, recall_values, pr_thresholds = precision_recall_curve(
         y_true,
@@ -61,42 +62,27 @@ def evaluate_thresholds(
     )
     fpr_values, tpr_values, roc_thresholds = roc_curve(y_true, probabilities)
 
-    best_thresholds = {
-        "max_f1": {
-            "threshold": float(best_f1["threshold"]),
-            "precision": float(best_f1["precision"]),
-            "recall": float(best_f1["recall"]),
-            "f1": float(best_f1["f1"]),
-            "f2": float(best_f1["f2"]),
-        },
-        "max_f2": {
-            "threshold": float(best_f2["threshold"]),
-            "precision": float(best_f2["precision"]),
-            "recall": float(best_f2["recall"]),
-            "f1": float(best_f2["f1"]),
-            "f2": float(best_f2["f2"]),
-        },
-    }
-
-    if not best_recall_constrained.empty:
-        row = best_recall_constrained.iloc[0]
-        best_thresholds["max_recall_with_min_precision"] = {
+    best_thresholds: dict[str, dict[str, float]] = {}
+    for threshold_strategy in strategies:
+        row = threshold_strategy.select(table)
+        if row is None:
+            continue
+        selected = {
             "threshold": float(row["threshold"]),
             "precision": float(row["precision"]),
             "recall": float(row["recall"]),
             "f1": float(row["f1"]),
             "f2": float(row["f2"]),
         }
-
-    if not best_precision_constrained.empty:
-        row = best_precision_constrained.iloc[0]
-        best_thresholds["max_precision_with_min_recall"] = {
-            "threshold": float(row["threshold"]),
-            "precision": float(row["precision"]),
-            "recall": float(row["recall"]),
-            "f1": float(row["f1"]),
-            "f2": float(row["f2"]),
-        }
+        if isinstance(threshold_strategy, CostThresholdStrategy):
+            selected["expected_cost"] = float(row["expected_cost"])
+            selected.update(
+                {
+                    "false_negative_cost": float(row["false_negative_cost"]),
+                    "false_positive_cost": float(row["false_positive_cost"]),
+                }
+            )
+        best_thresholds[threshold_strategy.name] = selected
 
     return ThresholdArtifacts(
         table=table,

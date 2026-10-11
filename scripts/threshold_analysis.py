@@ -24,6 +24,8 @@ def main() -> None:
     args = parser.parse_args()
 
     artifact = load_artifact(args.artifact)
+    # The artifact stores final TEST observations under the legacy holdout
+    # names. This script is evaluation-only and cannot change the artifact.
     threshold_artifacts = evaluate_thresholds(
         y_true=pd.Series(artifact.holdout_truth).to_numpy(),
         probabilities=pd.Series(artifact.holdout_probabilities).to_numpy(),

@@ -32,6 +32,8 @@ class ModelArtifact:
     estimator: Any
     shap_available: bool
     notes: list[str] = field(default_factory=list)
+    threshold_strategy: str = "max_f2"
+    threshold_strategy_parameters: dict[str, Any] = field(default_factory=dict)
 
     def to_payload(self) -> dict[str, Any]:
         return {
@@ -56,11 +58,17 @@ class ModelArtifact:
             "estimator": self.estimator,
             "shap_available": self.shap_available,
             "notes": self.notes,
+            "threshold_strategy": self.threshold_strategy,
+            "threshold_strategy_parameters": self.threshold_strategy_parameters,
         }
 
     @classmethod
     def from_payload(cls, payload: dict[str, Any]) -> "ModelArtifact":
-        return cls(**payload)
+        # Artifacts generated before threshold strategy metadata was added remain readable.
+        compatible_payload = dict(payload)
+        compatible_payload.setdefault("threshold_strategy", "max_f2")
+        compatible_payload.setdefault("threshold_strategy_parameters", {})
+        return cls(**compatible_payload)
 
     @classmethod
     def create(
@@ -86,6 +94,8 @@ class ModelArtifact:
         estimator: Any,
         shap_available: bool,
         notes: list[str] | None = None,
+        threshold_strategy: str = "max_f2",
+        threshold_strategy_parameters: dict[str, Any] | None = None,
     ) -> "ModelArtifact":
         return cls(
             model_name=model_name,
@@ -109,6 +119,8 @@ class ModelArtifact:
             estimator=estimator,
             shap_available=shap_available,
             notes=notes or [],
+            threshold_strategy=threshold_strategy,
+            threshold_strategy_parameters=threshold_strategy_parameters or {},
         )
 
 

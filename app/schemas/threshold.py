@@ -39,9 +39,13 @@ class ThresholdTableRow(BaseModel):
     false_positives: int
     false_negatives: int
     predicted_fraud_count: int
+    expected_cost: float | None = None
+    false_negative_cost: float | None = None
+    false_positive_cost: float | None = None
 
 
 class ThresholdEvaluationResponse(BaseModel):
     selected_threshold: float
     criterion: str
     rows: list[ThresholdTableRow]
+    evaluation_scope: str = "test_only_exploratory"

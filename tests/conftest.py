@@ -74,6 +74,8 @@ def sample_artifact(tmp_path: Path) -> Path:
         preprocessor=preprocessor,
         estimator=estimator,
         shap_available=False,
+        threshold_strategy="max_f2",
+        threshold_strategy_parameters={"source": "pytest"},
     )
     artifact_path = tmp_path / "artifact.joblib"
     save_artifact(artifact, artifact_path)

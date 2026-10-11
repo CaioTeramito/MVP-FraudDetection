@@ -33,6 +33,8 @@ def model_info() -> ModelInfoResponse:
         metrics=artifact.metrics,
         training_config=artifact.training_config,
         best_thresholds=summaries,
+        threshold_strategy=artifact.threshold_strategy,
+        threshold_strategy_parameters=artifact.threshold_strategy_parameters,
     )
 
 
