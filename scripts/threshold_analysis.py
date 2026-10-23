@@ -21,19 +21,32 @@ def main() -> None:
     parser.add_argument("--step", type=float, default=settings.threshold_step)
     parser.add_argument("--minimum-precision", type=float, default=settings.minimum_precision)
     parser.add_argument("--minimum-recall", type=float, default=settings.minimum_recall)
+    parser.add_argument("--model", default=None, help="Candidate model name stored in the artifact.")
+    parser.add_argument("--cost-fn", type=float, default=None)
+    parser.add_argument("--cost-fp", type=float, default=None)
     args = parser.parse_args()
 
     artifact = load_artifact(args.artifact)
-    # The artifact stores final TEST observations under the legacy holdout
-    # names. This script is evaluation-only and cannot change the artifact.
+    selected = artifact.model_results.get(args.model) if args.model else None
+    selected = selected or {
+        "model_name": artifact.model_name,
+        "validation_truth": artifact.holdout_truth,
+        "validation_probabilities": artifact.holdout_probabilities,
+    }
     threshold_artifacts = evaluate_thresholds(
-        y_true=pd.Series(artifact.holdout_truth).to_numpy(),
-        probabilities=pd.Series(artifact.holdout_probabilities).to_numpy(),
+        y_true=pd.Series(selected["validation_truth"]).to_numpy(),
+        probabilities=pd.Series(selected["validation_probabilities"]).to_numpy(),
         step=args.step,
         minimum_precision=args.minimum_precision,
         minimum_recall=args.minimum_recall,
+        strategy=(
+            __import__("ml.threshold.strategies", fromlist=["build_threshold_strategy"])
+            .build_threshold_strategy("cost", cost_fn=args.cost_fn, cost_fp=args.cost_fp)
+            if args.cost_fn is not None and args.cost_fp is not None else None
+        ),
     )
-    output_path = settings.results_dir / "threshold" / f"{artifact.model_name}_thresholds_recomputed.csv"
+    model_name = selected["model_name"]
+    output_path = settings.results_dir / "threshold" / f"{model_name}_thresholds_recomputed.csv"
     threshold_artifacts.table.to_csv(output_path, index=False)
     print(threshold_artifacts.table.to_string(index=False))
     print(f"Analise salva em: {output_path}")

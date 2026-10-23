@@ -34,6 +34,10 @@ class ModelArtifact:
     notes: list[str] = field(default_factory=list)
     threshold_strategy: str = "max_f2"
     threshold_strategy_parameters: dict[str, Any] = field(default_factory=dict)
+    # Validation results for every candidate, keyed by the stable model name.
+    # The fields are intentionally plain Python values so the payload remains
+    # portable and can be consumed without loading a second estimator.
+    model_results: dict[str, dict[str, Any]] = field(default_factory=dict)
 
     def to_payload(self) -> dict[str, Any]:
         return {
@@ -60,6 +64,7 @@ class ModelArtifact:
             "notes": self.notes,
             "threshold_strategy": self.threshold_strategy,
             "threshold_strategy_parameters": self.threshold_strategy_parameters,
+            "model_results": self.model_results,
         }
 
     @classmethod
@@ -68,6 +73,7 @@ class ModelArtifact:
         compatible_payload = dict(payload)
         compatible_payload.setdefault("threshold_strategy", "max_f2")
         compatible_payload.setdefault("threshold_strategy_parameters", {})
+        compatible_payload.setdefault("model_results", {})
         return cls(**compatible_payload)
 
     @classmethod
@@ -96,6 +102,7 @@ class ModelArtifact:
         notes: list[str] | None = None,
         threshold_strategy: str = "max_f2",
         threshold_strategy_parameters: dict[str, Any] | None = None,
+        model_results: dict[str, dict[str, Any]] | None = None,
     ) -> "ModelArtifact":
         return cls(
             model_name=model_name,
@@ -121,6 +128,7 @@ class ModelArtifact:
             notes=notes or [],
             threshold_strategy=threshold_strategy,
             threshold_strategy_parameters=threshold_strategy_parameters or {},
+            model_results=model_results or {},
         )
 
 

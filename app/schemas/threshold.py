@@ -24,6 +24,9 @@ class ThresholdEvaluationRequest(BaseModel):
         description="Business constraint for precision-oriented threshold selection.",
     )
     step: float | None = Field(default=None, gt=0.0, le=0.5)
+    model_name: str | None = Field(default=None, description="Candidate model stored in the artifact.")
+    cost_fn: float | None = Field(default=None, ge=0.0)
+    cost_fp: float | None = Field(default=None, ge=0.0)
 
 
 class ThresholdTableRow(BaseModel):

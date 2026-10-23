@@ -27,6 +27,7 @@ class TrainingOutput:
     threshold_artifacts: ThresholdArtifacts
     comparison_table: pd.DataFrame
     test_frame: pd.DataFrame
+    model_results: dict[str, dict[str, Any]]
 
 
 def _plot_threshold_figures(
@@ -204,6 +205,7 @@ def train_and_serialize(
     effective_minimum_recall = (
         settings.minimum_recall if minimum_recall is None else minimum_recall
     )
+    results_dir = settings.results_dir
     selected_threshold_strategy = build_threshold_strategy(
         threshold_selection_strategy,
         minimum_precision=effective_minimum_precision,
@@ -235,6 +237,56 @@ def train_and_serialize(
         )
 
     selected_threshold = threshold_artifacts.best_thresholds[threshold_selection_strategy]["threshold"]
+
+    # Evaluate and retain validation results for every candidate before the
+    # winner is serialized. This is the source of truth for later threshold
+    # and cost analysis; selection only decides the operational model.
+    model_results: dict[str, dict[str, Any]] = {}
+    for run in fitted_runs:
+        candidate_threshold_artifacts = evaluate_thresholds(
+            y_true=y_val.to_numpy(),
+            probabilities=run["validation_probabilities"],
+            step=effective_threshold_step,
+            minimum_precision=effective_minimum_precision,
+            minimum_recall=effective_minimum_recall,
+            strategy=selected_threshold_strategy,
+            amount=validation_amount,
+        )
+        candidate_name = run["model_name"]
+        candidate_threshold_artifacts.table.to_csv(
+            results_dir / "threshold" / f"{candidate_name}_thresholds.csv",
+            index=False,
+        )
+        _plot_threshold_figures(
+            candidate_threshold_artifacts,
+            results_dir / "figures",
+            candidate_name,
+        )
+        model_results[candidate_name] = {
+            "model_name": candidate_name,
+            "is_winner": candidate_name == selected_run["model_name"],
+            "validation_truth": y_val.astype(int).tolist(),
+            "validation_probabilities": [
+                float(value) for value in run["validation_probabilities"]
+            ],
+            "validation_metrics": {
+                key: float(value) for key, value in run["validation_evaluation"].metrics.items()
+            },
+            "threshold": float(
+                candidate_threshold_artifacts.best_thresholds[threshold_selection_strategy][
+                    "threshold"
+                ]
+            ),
+            "threshold_table": candidate_threshold_artifacts.table.to_dict(orient="records"),
+            "best_thresholds": candidate_threshold_artifacts.best_thresholds,
+            "threshold_strategy": selected_threshold_strategy.name,
+            "threshold_strategy_parameters": strategy_parameters(selected_threshold_strategy),
+            "training_config": {
+                "model_selection_metric": model_selection_metric,
+                "threshold_selection_strategy": threshold_selection_strategy,
+                "threshold_step": effective_threshold_step,
+            },
+        }
     final_pipeline = ImbPipeline(
         steps=[
             ("preprocessor", clone(preprocessor)),
@@ -290,6 +342,7 @@ def train_and_serialize(
         shap_available=settings.enable_shap,
         threshold_strategy=selected_threshold_strategy.name,
         threshold_strategy_parameters=strategy_parameters(selected_threshold_strategy),
+        model_results=model_results,
         notes=[
             "O modelo serializado do MVP e escolhido pela metrica configurada em "
             f"'model_selection_metric={model_selection_metric}' sobre treino/validacao.",
@@ -303,21 +356,10 @@ def train_and_serialize(
 
     save_artifact(artifact, artifact_path or settings.model_artifact_path)
 
-    results_dir = settings.results_dir
-    threshold_artifacts.table.to_csv(
-        results_dir / "threshold" / f"{artifact.model_name}_thresholds.csv",
-        index=False,
-    )
     comparison_table.to_csv(
         results_dir / "metrics" / "model_comparison.csv",
         index=False,
     )
-    _plot_threshold_figures(
-        threshold_artifacts,
-        results_dir / "figures",
-        artifact.model_name,
-    )
-
     test_frame = X_test.copy()
     test_frame["target"] = y_test
     test_frame["fraud_probability"] = final_probabilities
@@ -327,4 +369,5 @@ def train_and_serialize(
         threshold_artifacts=threshold_artifacts,
         comparison_table=comparison_table,
         test_frame=test_frame,
+        model_results=model_results,
     )
